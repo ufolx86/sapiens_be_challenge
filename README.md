@@ -1,5 +1,3 @@
-@ -0,0 +1,334 @@
-
 # Backend Coding Challenge
 
 ## Getting Started
@@ -102,8 +100,10 @@ src
    - Confirm database settings (e.g. SQLite file path).
 
 4. **Create or Update the Workflow YAML:**
+
    - Place a YAML file (e.g. `example_workflow.yml`) in a `workflows/` directory.
    - Define steps, for example:
+
      ```yaml
      name: "example_workflow"
      steps:
@@ -112,6 +112,22 @@ src
        - taskType: "notification"
          stepNumber: 2
      ```
+
+   - In case you have a task with dependency to another task you should be able to define the steps like this:
+
+   ```yaml
+   name: "example_workflow"
+   steps:
+      - taskType: "analysis"
+         stepNumber: 1
+      - taskType: "notification"
+         stepNumber: 2
+         dependsOn: 3
+      - taskType: "polygonArea"
+         stepNumber: 3
+   ```
+
+   (Bear in mind that these tasks are just examples and that in reality notification task does not use any output from polygonArea task)
 
 ### Running the Application
 
@@ -167,8 +183,107 @@ src
    ```
 
    This will read the configured workflow YAML, create a workflow and tasks, and queue them for processing.
+   You can visit the below documented endpoints to verify the status and results while they run or when they are finished. Also in the console important output is provided along the process for the developer to see how the tasks are being completed or failed.
 
-4. **Check Logs:**
+4. API Endpoints
+
+Aside from the analysis endpoint above mentioned there are 2 more endpoints that are accesible to the user.
+
+**Results**
+
+This endpoint will retrieve all the aggregated results once the workflow finishes running. Will return 404 if workflowID does not exist, and 400 if its not completed
+
+```bash
+{
+   "swagger": "2.0",
+   "host": "localhost:3000,
+   "basePath": "/workflow/:id",
+   "schemes": [ "json" ],
+   "paths": {
+      "/results":
+      {
+         "get": {
+            "summary": "Creates a payment"
+            "description": "Creates a payment request to Paypal",
+            "responses": {
+               "200": {
+                  {
+                     "workflowId": "c6621f1d-9e04-4d54-a9ab-4d11a6c8357f",
+                     "status": "completed",
+                     "finalResult": "{
+                        "workflowId":"c6621f1d-9e04-4d54-a9ab-4d11a6c8357f",
+                        "tasks":[
+                           {
+                           "taskId":"e0002706-efb8-44a4-ac2f-56092e020cfa",
+                           "type":"analysis",
+                           "output":"Brazil"
+                           },
+                           {
+                           "taskId":"729ee0d0-3a30-4550-858f-293945b88f60",
+                           "type":"notification",
+                           "output":"{}"
+                           },
+                           {
+                           "taskId":"4664f58c-e42e-413f-b837-23ae645ee28b",
+                           "type":"polygonArea",
+                           "output":"8363324.273315565"
+                           }
+                        ],
+                        "finalReport":"Aggregated data and results"
+                     }
+                  }
+               }
+               "400": {
+                  "description": "The workflow is not yet completed"
+               }
+               "404": {
+                  "description": "The workflow does not exist"
+               }
+
+            }
+         }
+      }
+   }
+}
+```
+
+**Status**
+
+This endpoint will retrieve the status of tasks within workflow, where status can be Queued, In Progress, Completed or Failed. Will return 404 if workflowID does not exist.
+
+```bash
+{
+   "swagger": "2.0",
+   "host": "localhost:3000,
+   "basePath": "/workflow/:id",
+   "schemes": [ "json" ],
+   "paths": {
+      "/status":
+      {
+         "get": {
+            "summary": "Creates a payment"
+            "description": "Creates a payment request to Paypal",
+            "responses": {
+               "200": {
+                  {
+                     "workflowId": "5af4f66f-4ad5-4ef1-ae53-e66aa3c14454",
+                     "status": "completed",
+                     "completedTasks": 3,
+                     "totalTasks": 3
+                  }
+               }
+               "404": {
+                  "description": "The workflow does not exist"
+               }
+
+            }
+         }
+      }
+   }
+}
+```
+
+5. **Check Logs:**
    - The worker picks up tasks from `queued` state.
    - `TaskRunner` runs the corresponding job (e.g., data analysis, email notification) and updates states.
    - Once tasks are done, the workflow is marked as `completed`.
