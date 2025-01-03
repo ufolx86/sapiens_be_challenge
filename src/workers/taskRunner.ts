@@ -74,6 +74,10 @@ export class TaskRunner {
         currentWorkflow.status = WorkflowStatus.Failed;
       } else if (allCompleted) {
         currentWorkflow.status = WorkflowStatus.Completed;
+        const job = getJobForTaskType("report");
+        const reportResult = await job.run(task);
+        console.log("Results:");
+        console.log(reportResult);
       } else {
         currentWorkflow.status = WorkflowStatus.InProgress;
       }
