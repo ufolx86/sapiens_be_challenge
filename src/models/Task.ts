@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToOne,
+} from "typeorm";
 import { Workflow } from "./Workflow";
 import { TaskStatus } from "../workers/taskRunner";
 
@@ -30,4 +36,7 @@ export class Task {
 
   @ManyToOne(() => Workflow, (workflow) => workflow.tasks)
   workflow!: Workflow;
+
+  @OneToOne(() => Task, { nullable: true })
+  dependencyTask?: number;
 }

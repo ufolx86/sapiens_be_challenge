@@ -20,7 +20,33 @@ export class TaskRunner {
    * @param task - The task entity that determines which job to run.
    * @throws If the job fails, it rethrows the error.
    */
+
+  async findStatus(task: Task): Promise<Task | null> {
+    try {
+      const depTask = await this.taskRepository.findOne({
+        where: {
+          workflow: { workflowId: task.workflow.workflowId },
+          stepNumber: task.dependencyTask,
+        },
+      });
+
+      return depTask;
+    } catch (error) {
+      console.error("Error finding task:", error);
+      return null;
+    }
+  }
+
   async run(task: Task): Promise<void> {
+    if (task.dependencyTask !== null) {
+      const dependentTask = await this.findStatus(task);
+      if (dependentTask?.status !== TaskStatus.Completed) {
+        task.resultId = undefined;
+        task.status = TaskStatus.Queued;
+        task.progress = null;
+        await this.taskRepository.save(task);
+      }
+    }
     task.status = TaskStatus.InProgress;
     task.progress = "starting job...";
     await this.taskRepository.save(task);
