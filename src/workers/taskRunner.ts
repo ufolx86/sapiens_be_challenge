@@ -104,6 +104,8 @@ export class TaskRunner {
         const reportResult = await job.run(task);
         console.log("Results:");
         console.log(reportResult);
+        currentWorkflow.finalResult = reportResult;
+        await workflowRepository.save(currentWorkflow);
       } else {
         currentWorkflow.status = WorkflowStatus.InProgress;
       }
